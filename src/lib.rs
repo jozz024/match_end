@@ -7,6 +7,7 @@ use smash::app;
 use smash::lib::lua_const::*;
 use smash::app::lua_bind::*;
 use smash::lua2cpp::L2CFighterCommon;
+use std::{thread, time};
 
 pub static mut FIGHTER_MANAGER_ADDR: usize = 0;
 
@@ -27,6 +28,9 @@ pub fn enable_hook(lua_state: u64) -> u64 {
     let result = original!()(lua_state);
     if result == 0 {
         println!("[match_end] One of the fighters is not an amiibo, exiting.");
+        let millis = time::Duration::from_millis(1000);
+        let now = time::Instant::now();
+        thread::sleep(millis);
         unsafe{
             skyline::nn::oe::ExitApplication();
         }
