@@ -8,6 +8,7 @@ use smash::lib::lua_const::*;
 use smash::app::lua_bind::*;
 use smash::lua2cpp::L2CFighterCommon;
 use std::{thread, time};
+use serde::Serialize;
 
 pub static mut FIGHTER_MANAGER_ADDR: usize = 0;
 
@@ -17,6 +18,19 @@ pub static mut run_0_once_p2: i32 = 0;
 pub static mut fighter_1_match_wins: i32 = 0;
 pub static mut fighter_2_match_wins: i32 = 0;
 pub static mut ENTRY_ID: usize = 0;
+
+static ENDPOINT: &'static str = "http://10.0.0.41:5000/match_end";
+const TIMEOUT: u64 = 10;
+
+#[derive(Serialize)]
+struct FpInfo {
+    pub score: i32
+}
+#[derive(Serialize)]
+struct EndInfo {
+    pub fp1_info: FpInfo,
+    pub fp2_info: FpInfo
+}
 
 extern "C" {
     #[link_name="_ZN3app3nfp10is_enabledEP9lua_State"]
@@ -78,6 +92,26 @@ pub fn once_per_fighter_frame(fighter: &mut L2CFighterCommon) {
 
         if FighterManager::is_result_mode(fighter_manager) && FighterManager::entry_count(fighter_manager) > 0 {
             if amount_printed == 0 {
+                let fp1_info = FpInfo{
+                    score: fighter_1_match_wins
+                };
+                let fp2_info = FpInfo{
+                    score: fighter_2_match_wins
+                };
+
+                let info = EndInfo {
+                    fp1_info: fp1_info,
+                    fp2_info: fp2_info
+                };
+
+                match minreq::post(ENDPOINT).with_header("Content-Type",  "application/json").with_json(&info).unwrap().with_timeout(TIMEOUT).send() {
+                    Ok(s) => {
+                        println!("Request sent!");
+                    }
+                    Err(err) => {
+                        println!("{:?}", err);
+                    }
+                };
                 if fighter_1_match_wins > fighter_2_match_wins {
                     println!("[match_end] Player 1 won. {}-{}", fighter_1_match_wins, fighter_2_match_wins);
                 }
