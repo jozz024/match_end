@@ -23,6 +23,15 @@ extern "C" {
     pub fn nfp_is_enabled(lua_state: u64) -> u64;
 }
 
+fn offset_to_addr<T>(offset: usize) -> *mut T {
+    unsafe { (skyline::hooks::getRegionAddress(skyline::hooks::Region::Text) as usize + offset) as *mut T }
+}
+
+fn get_current_menu() -> u32 {
+    return unsafe { *(offset_to_addr(0x53030f0) as *const u32) }
+}
+
+
 #[skyline::hook(replace = nfp_is_enabled)]
 pub fn enable_hook(lua_state: u64) -> u64 {
     let result = original!()(lua_state);
@@ -96,4 +105,11 @@ pub fn once_per_fighter_frame(fighter: &mut L2CFighterCommon) {
 pub fn main() {
     skyline::install_hooks!(enable_hook);
     install_agent_frame_callbacks!(once_per_fighter_frame);
+
+    std::thread::spawn( || {
+        loop {
+            std::thread::sleep(std::time::Duration::from_secs(4));
+            println!("[match_end] current_menu_id: {:#09x}", get_current_menu());
+        }
+    });
 }
