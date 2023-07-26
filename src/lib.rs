@@ -17,6 +17,7 @@ pub static mut run_0_once_p2: i32 = 0;
 pub static mut fighter_1_match_wins: i32 = 0;
 pub static mut fighter_2_match_wins: i32 = 0;
 pub static mut ENTRY_ID: usize = 0;
+pub static mut is_in_match: bool = false;
 
 extern "C" {
     #[link_name="_ZN3app3nfp10is_enabledEP9lua_State"]
@@ -50,12 +51,8 @@ pub fn enable_hook(lua_state: u64) -> u64 {
 #[fighter_frame_callback]
 pub fn once_per_fighter_frame(fighter: &mut L2CFighterCommon) {
     unsafe {
-        LookupSymbol(
-            &mut FIGHTER_MANAGER_ADDR,
-            "_ZN3lib9SingletonIN3app14FighterManagerEE9instance_E\u{0}"
-                .as_bytes()
-                .as_ptr(),
-        );
+        is_in_match = true;
+
         let fighter_manager = *(FIGHTER_MANAGER_ADDR as *mut *mut smash::app::FighterManager);
         let fighter_1_information = FighterManager::get_fighter_information(
             fighter_manager,
@@ -97,6 +94,7 @@ pub fn once_per_fighter_frame(fighter: &mut L2CFighterCommon) {
                 fighter_1_match_wins = 0;
                 fighter_2_match_wins = 0;
             }
+            is_in_match = false;
         }
     }
 }
@@ -106,10 +104,22 @@ pub fn main() {
     skyline::install_hooks!(enable_hook);
     install_agent_frame_callbacks!(once_per_fighter_frame);
 
+    unsafe {LookupSymbol(
+        &mut FIGHTER_MANAGER_ADDR,
+        "_ZN3lib9SingletonIN3app14FighterManagerEE9instance_E\u{0}"
+            .as_bytes()
+            .as_ptr(),
+    );}
+
     std::thread::spawn( || {
         loop {
             std::thread::sleep(std::time::Duration::from_secs(4));
-            println!("[match_end] current_menu_id: {:#09x}", get_current_menu());
+            if unsafe {is_in_match } == false {
+                println!("[match_end] current_menu_id: {:#09x}", get_current_menu());
+            }
+            else {
+                println!("[match_end] current_menu_id: 0x4206969");
+            }
         }
     });
 }
