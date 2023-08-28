@@ -14,12 +14,13 @@ crate-type = ["cdylib"]
 skyline = { git = "https://github.com/ultimate-research/skyline-rs.git" }
 skyline_smash = { git = "https://github.com/blu-dev/skyline-smash.git", features = ["weak_l2cvalue"] }
 smashline = { git = "https://github.com/blu-dev/smashline.git", branch = "development" }
-minreq = { version = "=2.2.1", features = ["https", "json-using-serde"] }
+once_cell = "1.12.0"
 serde = { version = "1.0", features = ["derive"] }
+minreq = { version = "2", features = ["https-native", "json-using-serde"] }
 
 [patch.crates-io]
-ring = { git = "https://github.com/skyline-rs/ring", branch = "0.16.20" }
-webpki = { git = "https://github.com/skyline-rs/webpki" }
+# Specifying latest commit because git only doesn't use latest changes
+native-tls = { git = "https://github.com/skyline-rs/rust-native-tls", rev = "f202fca"  }
 
 [profile.dev]
 panic = "abort"
